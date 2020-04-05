@@ -30,6 +30,30 @@ Date : 07/02/2020
 
 6. On télécharge ainsi le paquet comportant des fonds d'écran de GRUB. Toujours dans le même fichier, on rajoute le code suivant : ```GRUB_BACKGROUND="/usr/share/images/grub/Hortensia-1.tga"```, qui correspond au chemin du fichier image souhaité. Après validation et redémarrage de la VM, l'image d'Hortensia est bien en fond de notre menu GRUB. 
 
+7. On ajoute ces lignes au fichier ```/etc/grub.d/40_custom``` :
+```
+menuentry 'Arrêt du système' { 
+	halt 
+} 
+menuentry 'Redémarrage du système' { 
+	reboot 
+}
+```
+
+8.
+ ```
+sudo mkdir /boot/grub/layouts
+sudo grub-kbdcomp -o /boot/grub/layouts/fr.gkb fr
+```
+
+Ajouter  `GRUB_TERMINAL_INPUT=at_keyboard`  au fichier /etc/default/grub Ajouter à /etc/grub.d/40_custom :
+
+```
+# Clavier fr
+insmod keylayouts
+keymap fr
+```
+
 ## Exercice 3 : Noyau
 
 1. On installe le paquet avec la commande ```sudo apt install build-essential```.
@@ -38,10 +62,41 @@ Date : 07/02/2020
 
 3. On fait de même pour le fichier ```Makefile```.
 
-4. 
+4. On compile le module à l’aide de la commande ```make```, puis on l'installe à l’aide de la commande ```make install```.
+
+5. Le fichier se trouve au format ```.ko``` à l'emplacement ```/lib/modules/5.3.0-42-generic/kernel/drivers/misc```.
 
 ## Exercice 4 : Exécution de commandes en différé : at et cron
-1. Pour programmer une tâche affichant un rappel que la réunion va démarrer dans 3 minutes, il suffit d'utiliser la commande ```at```. Ainsi, dans le cas présent, on écrit ```echo 'echo "Rappel : la réunion va commencer !"' | at now +3 minutes```. La console renvoie un numéro de tâche et l'heure à laquelle la tâche sera exécutée. Lorsqu'on liste les tâches en attente d'exécution avec la commande ```atq```, la tâche est bien présente pendant 3 minutes avant jusqu'à l'heure d'exécution, cependant, aucun message n'est affiché par la console à l'heure précisée précédemment.
+1. Pour programmer une tâche affichant un rappel que la réunion va démarrer dans 3 minutes, il suffit d'utiliser la commande ```at```. Ainsi, dans le cas présent, on écrit ```echo 'echo "Rappel : la réunion va commencer !"' | at now +3 minutes```. La console renvoie un numéro de tâche et l'heure à laquelle la tâche sera exécutée. Lorsqu'on liste les tâches en attente d'exécution avec la commande ```atq```, la tâche est bien présente pendant 3 minutes avant jusqu'à l'heure d'exécution, cependant, aucun message n'est affiché par la console à l'heure précisée précédemment. 
+
+2. En affichant les logs avec la commande ```journalctl -r```, on voit l'erreur suivante : ```atd[xxxx]: Exec failed for mail command: No such file or directory```. En effet, le daemon ne trouve pas la commande ```mail``` qui n'est pas installé sur cette machine. On installe donc le paquet ```mailutils```. Puis, il faut modifier la commande en précisant le télétype sur lequel on se trouve : ```echo 'echo "Rappel : la réunion va commencer !" > /dev/tty1 ' | at now +3 minutes```, car on se trouve sur tty1.
+
+3. Pour afficher ce message toutes les 3 minutes, on modifie la *crontab*, à l'aide de la commande ```crontab -e```, et on écrit la ligne suivante :
+```
+*/3 * * * * echo "Il faut réviser l'examen!" > /dev/tty1
+```
+
+4. Pour effectuer une commande tous les 15 minutes, tous les jours de l'année, on écrit :
+```
+*/15 * * * * commande > /dev/tty1
+```
+
+5. Une commande toutes les cinq minutes à partir de 2 (2, 7, 12, etc.) à 18 heures les 1er et 15 du mois est programmée de la façon suivante :
+```
+2/5 18 1,15 * * commande > /dev/tty1
+```
+
+6. L’exécution d’une commande du lundi au vendredi à 17 heures :
+```
+0 17 * * mon-fri commande > /dev/tty1
+```
+
+7. Pour rediriger les mails vers un fichier log de notre dossier personnel, on crée ce fichier et puis on modifie la *crontab* de la façon suivante  : 
+```
+*/3 * * * * echo "Il faut réviser l'examen!" >> /fichier_log
+```
+
+8. On vide la *crontab* à l'aide de la commande ```crontab -r```.
 
 ## Exercice 5 : Surveillance de l'activité du système
 * La commande ```htop``` permet d'afficher tous les processus en cours d'exécution dans la console virtuelle. La commande ```w``` affiche les informations sur les autres utilisateurs (consoles) qui sont connectés et leur processus en cours d'exécution. Dans notre cas, cette dernière renvoie ```tty1``` et ```tty2```.
@@ -53,6 +108,11 @@ Date : 07/02/2020
 * Pour avoir les infos sur le processeur au format JSON, il faut exécuter la commande ```lshw -json CPU```. ```lshw``` liste le matériel de la machine, ```CPU``` permet de ne garder que les infos du processeur, et ```-json``` affiche en format JSON.
 
 * On affiche la liste des derniers démarrages de la machine avec la commande ```journalctl --list-boots```, qui nous renvoie la date, et l'heure précise.
+
+* On affiche tout ce qu'il s'est passé sur la machine avant-hier avec la commande `journalctl -S -2d -U -1d`  
+Le -S signifie "ince" et le U "until". On remonte dans le temps avec -2d : il y a deux jours. On sélectionne les log entre il y a deux jours et il y a un jour, c'est à dire avant-hier.
+
+* 
 
 ## Exercice 7 : Sauvegardes, tar
 
