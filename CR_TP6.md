@@ -81,6 +81,13 @@ keymap fr
 
 2. En affichant les logs avec la commande ```journalctl -r```, on voit l'erreur suivante : ```atd[xxxx]: Exec failed for mail command: No such file or directory```. En effet, le daemon ne trouve pas la commande ```mail``` qui n'est pas installé sur cette machine. On installe donc le paquet ```mailutils```. Puis, il faut modifier la commande en précisant le télétype sur lequel on se trouve : ```echo 'echo "Rappel : la réunion va commencer !" > /dev/tty1 ' | at now +3 minutes```, car on se trouve sur tty1.
 
+_Crontab :_
+minute	heure	jour du mois	mois	jour de la semaine	commande
+* Répétition toutes les 5 unités : */5
+* @monthly, @daily, etc.
+* thu, fri, sun, etc.
+* 10-20/3 = (10,13,16,19)
+
 3. Pour afficher ce message toutes les 3 minutes, on modifie la *crontab*, à l'aide de la commande ```crontab -e```, et on écrit la ligne suivante :
 ```
 */3 * * * * echo "Il faut réviser l'examen!" > /dev/tty1
